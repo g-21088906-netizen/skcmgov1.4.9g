@@ -348,6 +348,46 @@ const header=clean[0]; const data=clean.slice(1).map(r=>Object.fromEntries(heade
 return {header,data};
 }
 
+// GANTIKAN fungsi parseCSV sedia ada dengan versi ini:
+function parseCSV(txt){
+  if(!txt) return {header:[],data:[]};
+  // Buang BOM & SAMAKAN penamat baris:
+  // - \r\n  -> \n
+  // - \r    -> \n   (kritikal untuk iOS/Files/Numbers)
+  txt = String(txt).replace(/^\uFEFF/, '').replace(/\r\n?/g, '\n');
+
+  // Autokesan pembatas: koma, ; atau tab
+  const firstLine = (txt.split('\n')[0]||'').trim();
+  const cnt = {comma:(firstLine.match(/,/g)||[]).length,
+               semi:(firstLine.match(/;/g)||[]).length,
+               tab:(firstLine.match(/\t/g)||[]).length};
+  let d = ','; if(cnt.semi>cnt.comma&&cnt.semi>=cnt.tab) d=';'; else if(cnt.tab>cnt.comma&&cnt.tab>=cnt.semi) d='\t';
+
+  const rows = []; let cur='', row=[], q=false;
+  for(let i=0;i<txt.length;i++){
+    const c = txt[i], n = txt[i+1];
+    if(q){
+      if(c=='"'&&n=='"'){cur+='"'; i++;}
+      else if(c=='"'){q=false;}
+      else cur+=c;
+    }else{
+      if(c=='"'){ q=true; }
+      else if(c===d){ row.push(cur); cur=''; }
+      else if(c=='\n'){ row.push(cur); rows.push(row); row=[]; cur=''; }
+      else { cur+=c; }
+    }
+  }
+  if(cur.length || row.length){ row.push(cur); rows.push(row); }
+
+  const clean = rows.filter(r=>r.some(x=>String(x).trim()!==''))
+                    .map(r=>r.map(x=>String(x).trim()));
+  if(!clean.length) return {header:[],data:[]};
+
+  const header = clean[0];
+  const data   = clean.slice(1).map(r => Object.fromEntries(header.map((h,i)=>[h, r[i]??''])));
+  return {header, data};
+}
+
 // ---------- Alias Medan ----------
 const ALIAS = {
 NAMA:['NAMA','Nama','Nama Murid','nama','Student Name'],
