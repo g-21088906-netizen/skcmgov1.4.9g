@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SKCMgo — SmartDash v4.1.9g</title>
+<style>
+:root{
+--bg:#f7f8fb; --card:#fff; --text:#0b1324; --muted:#748093; --line:#e8ecf4; --accent:#2d7cf5;
+--good:#16a34a; --warn:#f59e0b; --bad:#ef4444;
+}
+[data-theme="dark"]{
+--bg:#0d1117; --card:#131a22; --text:#e6edf3; --muted:#9aa7b0; --line:#1f2732; --accent:#2d7cf5;
+--good:#22c55e; --warn:#fbbf24; --bad:#f97316;
+}
+[data-accent="grey"]{--accent:#6b7280}
+[data-accent="orange"]{--accent:#f97316}
+[data-accent="lime"]{--accent:#65a30d}
+[data-accent="sea"]{--accent:#2d7cf5}
+[data-accent="bee"]{--accent:#f59e0b}
+
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial}
+header{display:flex;align-items:center;gap:.75rem;padding:12px 16px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--bg);z-index:5}
+h1{font-size:18px;margin:0} .sub{color:var(--muted);font-size:12px}
+.btn{padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--card);cursor:pointer}
+.btn.primary{background:var(--accent);border-color:transparent;color:#fff}
+.btn.ghost{background:transparent}
+select,input[type="search"],input[type="text"],input[type="number"]{padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--text)}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px 12px;padding:10px 16px;border-bottom:1px solid var(--line)}
+.chip{padding:8px 12px;border:1px solid var(--line);border-radius:12px;background:var(--card)}
+.tabs{display:flex;flex-wrap:wrap;gap:10px;padding:10px 16px;border-bottom:1px solid var(--line)}
+.tab-btn{background:var(--card);border:1px solid var(--line);padding:10px 14px;border-radius:12px;cursor:pointer}
+.tab-btn.active{background:var(--accent);color:#fff;border-color:transparent}
+.view{display:none;padding:16px} .view.active{display:block}
+.grid{display:grid;gap:12px}
+@media(min-width:740px){ .grid.cols-2{grid-template-columns:1fr 1fr} .grid.cols-3{grid-template-columns:repeat(3,1fr)} }
+@media(min-width:1020px){ .grid.cols-4{grid-template-columns:repeat(4,1fr)} }
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px}
+.kpi{display:flex;align-items:center;justify-content:space-between}
+.kpi .v{font-size:28px;font-weight:700} .kpi .lbl{color:var(--muted);font-size:13px}
+.pill{display:inline-block;padding:4px 10px;border-radius:999px;font-size:12px;border:1px solid var(--line);background:var(--bg);color:var(--muted)}
+table{width:100%;border-collapse:collapse}
+th,td{border-bottom:1px solid var(--line);padding:10px 8px;text-align:left;vertical-align:top}
+th{font-size:12px;text-transform:uppercase;color:var(--muted);position:sticky;top:0;background:var(--card);z-index:1}
+tr:hover td{background:color-mix(in oklab, var(--accent) 8%, transparent)}
+.tbl-wrap{max-height:56vh;overflow:auto;border:1px solid var(--line);border-radius:10px;background:var(--card)}
+.chart{width:100%;height:240px;border:1px solid var(--line);border-radius:10px;background:var(--card)}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+footer{padding:14px 16px;color:var(--muted);border-top:1px solid var(--line);text-align:center;margin-top:20px}
+
+/* Cetak */
+@media print{ body{background:#fff} .no-print, header, .toolbar, .tabs{display:none!important} .print-wrap{display:block!important} }
+.print-wrap{display:none}
+.print-head{display:flex;justify-content:space-between;align-items:center;margin:0 0 8px 0}
+.print-head h2{margin:0}
+.kv tr td:first-child{width:180px;color:var(--muted)}
+.warn{color:var(--warn)} .good{color:var(--good)} .bad{color:var(--bad)}
+</style>
+</head>
+<body data-theme="light" data-accent="sea">
+<header>
+<div>
+<h1>SKCMgo — SmartDash v4.1.9g</h1>
+<div class="sub">Dashboard • Pentadbiran+ • Akademik • HEM • Kokurikulum • Arkib • Penjaga</div>
+</div>
+<div style="margin-left:auto" class="row">
+<div id="dateTimeBox" style="font-weight:500;"></div>
+</div>
+<div style="margin-left:auto" class="row">
+<button class="btn" id="btnTheme">🌗 Tema</button>
+<select id="accentSel" class="chip">
+<option value="sea">Sea Blue</option><option value="grey">Grey</option>
+<option value="orange">Orange</option><option value="lime">Lime</option>
+<option value="bee">Bumblebee</option>
+</select>
+</div>
+</header>
+
+<!-- DATA TOOLBAR -->
+<div class="toolbar">
+<label class="chip">Import CSV: <input type="file" id="fileInput" accept=".csv" multiple></label>
+<input type="text" id="urlInput" placeholder="Import dari URL CSV (Google Sheets publish / GitHub raw)" size="42">
+<button class="btn" id="btnURL">Muat URL</button>
+<button class="btn" id="btnSave">Simpan Cache</button>
+<button class="btn" id="btnClear">Buang Cache</button>
+<div class="row" style="margin-left:auto">
+<select id="tahunSel"></select>
+<select id="kelasSel"></select>
+</div>
+<div class="sub" style="width:100%">Penapis Tahun/Kelas ini mempengaruhi semua tab. Data kekal di peranti (localStorage).</div>
+</div>
+
+<!-- TABS -->
+<div class="tabs" id="tabs">
+<button class="tab-btn active" data-tab="dash">Dashboard</button>
+<button class="tab-btn" data-tab="admin">Pentadbiran+</button>
+<button class="tab-btn" data-tab="akad">Akademik</button>
+<button class="tab-btn" data-tab="hem">HEM</button>
+<button class="tab-btn" data-tab="koko">Kokurikulum</button>
+<button class="tab-btn" data-tab="arkib">Arkib</button>
+<button class="tab-btn" data-tab="penjaga">Penjaga</button>
+</div>
+
+<!-- DASHBOARD -->
+<section class="view active" id="view-dash">
+<div class="grid cols-4">
+<div class="card kpi"><div><div class="lbl">Jumlah Murid</div><div class="v" id="kpiTotal">0</div></div><span class="pill">Semua</span></div>
+<div class="card kpi"><div><div class="lbl">Lelaki</div><div class="v" id="kpiL">0</div></div><span class="pill">L</span></div>
+<div class="card kpi"><div><div class="lbl">Perempuan</div><div class="v" id="kpiP">0</div></div><span class="pill">P</span></div>
+<div class="card kpi"><div><div class="lbl">% Purata Kehadiran</div><div class="v" id="kpiHadir">0%</div></div><span class="pill">kehadir</span></div>
+</div>
+<div class="grid cols-2" style="margin-top:12px">
+<div class="card">
+<div class="row" style="justify-content:space-between;align-items:center">
+<b>Ringkasan Mengikut Kelas</b>
+<div class="row">
+<button class="btn ghost" onclick="printTable('tblKelas','Ringkasan Mengikut Kelas')">Cetak</button>
+<button class="btn ghost" onclick="exportTable('tblKelas')">Eksport CSV</button>
+</div>
+</div>
+<div class="tbl-wrap">
+<table id="tblKelas"><thead><tr><th>#</th><th>Kelas</th><th>L</th><th>P</th><th>Jumlah</th><th>Guru Kelas</th></tr></thead><tbody></tbody></table>
+</div>
+</div>
+<div class="card">
+<b>Graf Ringkas Mengikut Kelas</b>
+<canvas id="clsChart" class="chart"></canvas>
+</div>
+</div>
+</section>
+
+<!-- PENTADBIRAN+ -->
+<section class="view" id="view-admin">
+<div class="grid cols-4">
+<div class="card kpi"><div><div class="lbl">Bil. Guru</div><div class="v" id="kpiGuru">0</div></div><span class="pill">guru</span></div>
+<div class="card kpi"><div><div class="lbl">AKP</div><div class="v" id="kpiAKP">0</div></div><span class="pill">staf</span></div>
+<div class="card kpi"><div><div class="lbl">Kebersihan</div><div class="v" id="kpiKeb">0</div></div><span class="pill">pekerja</span></div>
+<div class="card kpi"><div><div class="lbl">Pengawal</div><div class="v" id="kpiGuard">0</div></div><span class="pill">security</span></div>
+</div>
+
+<div class="grid cols-2" style="margin-top:12px">
+<div class="card">
+<div class="row" style="justify-content:space-between;align-items:center">
+<b>Data Staf (Guru & AKP)</b>
+<button class="btn ghost" onclick="exportTable('tblStaf')">Eksport CSV</button>
+</div>
+<div class="tbl-wrap"><table id="tblStaf"><thead><tr><th>Nama</th><th>Jawatan</th><th>Opsyen/Subjek</th><th>Telefon</th><th>Emel</th></tr></thead><tbody></tbody></table></div>
+</div>
+
+<div class="card">
+<div class="row" style="justify-content:space-between;align-items:center">
+<b>Keberadaan Harian</b>
+<div class="sub">Isi daripada CSV: tarikh, nama_guru, status, masa_mula, masa_tamat, catatan</div>
+</div>
+<div class="tbl-wrap"><table id="tblHadirGuru"><thead><tr><th>Tarikh</th><th>Nama</th><th>Status</th><th>Masa</th><th>Catatan</th></tr></thead><tbody></tbody></table></div>
+</div>
+</div>
+
+<div class="card" style="margin-top:12px">
+<div class="row" style="justify-content:space-between;align-items:center">
+<b>Jadual Waktu (Penapis Guru/Kelas/Masa/Subjek)</b>
+<div class="row">
+<input id="jadCariGuru" type="search" placeholder="Cari guru…">
+<input id="jadCariKelas" type="search" placeholder="Cari kelas…">
+<input id="jadCariMasa" type="search" placeholder="Cari masa…">
+<input id="jadCariSubjek" type="search" placeholder="Cari subjek…">
+<input id="jadCariHari" type="search" placeholder="Cari Hari…">
+<select id="jadHari" class="chip">
+<option value="">— Semua Hari —</option>
+<option>Ahad</option><option>Isnin</option><option>Selasa</option><option>Rabu</option><option>Khamis</option>
+</select>
+<button class="btn" id="jadClear" type="button">Reset</button>
+</div>
+</div>
+<div class="tbl-wrap"><table id="tblJadual"><thead><tr><th>Guru</th><th>Kelas</th><th>Masa</th><th>Subjek</th><th>Hari</th></tr></thead><tbody></tbody></table></div>
+</div>
+
+<div class="grid cols-3" style="margin-top:12px">
+<div class="card">
+<b>Log Aktiviti / Program</b>
+<div class="tbl-wrap"><table id="tblLog"><thead><tr><th>Tarikh</th><th>Program</th><th>Unit</th><th>Status</th></tr></thead><tbody></tbody></table></div>
+</div>
+<div class="card">
+<b>Pekerja Kebersihan / Pengawal</b>
+<div class="tbl-wrap"><table id="tblPekerja"><thead><tr><th>Nama</th><th>Peranan</th><th>Syif</th><th>Catatan</th></tr></thead><tbody></tbody></table></div>
+</div>
+<div class="card">
+<b>Penghubung (PPD / PDRM)</b>
+<div class="tbl-wrap"><table id="tblHubung"><thead><tr><th>Agensi</th><th>Nama</th><th>Telefon</th><th>Catatan</th></tr></thead><tbody></tbody></table></div>
+</div>
+</div>
+</section>
+
+<!-- AKADEMIK -->
+<section class="view" id="view-akad">
+<div class="grid cols-3">
+<div class="card kpi"><div><div class="lbl">Peratus Lulus</div><div class="v" id="kpiLulus">0%</div></div><span class="pill">akademik</span></div>
+<div class="card kpi"><div><div class="lbl">Subjek Tertinggi</div><div class="v" id="kpiTopSub">-</div></div><span class="pill">subjek</span></div>
+<div class="card kpi"><div><div class="lbl">Murid Cemerlang</div><div class="v" id="kpiCemerlang">0</div></div><span class="pill">≥ A</span></div>
+</div>
+
+<div class="card" style="margin:12px 0">
+<div class="row" style="align-items:center;gap:10px">
+<select id="subSel" class="chip"><option value="">— Semua Subjek —</option></select>
+<input id="akdCari" type="search" placeholder="Cari nama murid…">
+<button id="akdBtnCari" type="button" class="btn">Cari</button>
+<button id="akdBtnTop" type="button" class="btn">Top 10</button>
+<button id="akdCetak" type="button" class="btn">Cetak Slip</button>
+</div>
+</div>
+
+<div class="grid cols-2">
+<div class="card">
+<div class="row" style="justify-content:space-between;align-items:center">
+<b>Taburan Gred / Markah</b>
+<button class="btn ghost" onclick="exportTable('tblAkad')">Eksport CSV</button>
+</div>
+<div class="tbl-wrap"><table id="tblAkad"><thead><tr><th>Nama</th><th>Kelas</th><th>Subjek</th><th>Markah</th><th>Gred</th></tr></thead><tbody></tbody></table></div>
+</div>
+<div class="card">
+<b>Graf Peratus Lulus per Subjek</b>
+<canvas id="akadChart" class="chart"></canvas>
+</div>
+</div>
+
+<div class="card">
+<b>Slip Individu</b>
+<div id="akdSlip" class="print-target"></div>
+</div>
+</section>
+
+<!-- HEM -->
+<section class="view" id="view-hem">
+<div class="grid cols-4">
+<div class="card kpi"><div><div class="lbl">Penerima RMT</div><div class="v" id="kpiRMT">0</div></div><span class="pill">rmt</span></div>
+<div class="card kpi"><div><div class="lbl">Bantuan / Biasiswa</div><div class="v" id="kpiBantuan">0</div></div><span class="pill">bantuan</span></div>
+<div class="card kpi"><div><div class="lbl">Bil. Keluarga</div><div class="v" id="kpiKeluarga">0</div></div><span class="pill">keluarga</span></div>
+<div class="card kpi"><div><div class="lbl">Rekod Sahsiah (SSDM+)</div><div class="v" id="kpiSSDM">0</div></div><span class="pill">ssdm</span></div>
+</div>
+<div class="grid cols-2" style="margin-top:12px">
+<div class="card">
+<b>Senarai RMT / Bantuan</b>
+<div class="tbl-wrap"><table id="tblRMT"><thead><tr><th>Nama</th><th>Kelas</th><th>Jenis</th><th>Status</th></tr></thead><tbody></tbody></table></div>
+</div>
+<div class="card">
+<b>Analitik Kehadiran (Ringkas)</b>
+<div class="tbl-wrap"><table id="tblHadir"><thead><tr><th>Nama</th><th>Kelas</th><th>% Hadir</th></tr></thead><tbody></tbody></table></div>
+</div>
+</div>
+<div class="card" style="margin-top:12px">
+<b>Rekod Sahsiah (SSDM+)</b>
+<div class="tbl-wrap"><table id="tblSSDM"><thead><tr><th>Nama</th><th>Kelas</th><th>Klasifikasi</th><th>Catatan</th></tr></thead><tbody></tbody></table></div>
+</div>
+</section>
+
+<!-- KOKURIKULUM -->
+<section class="view" id="view-koko">
+<div class="grid cols-3">
+<div class="card kpi"><div><div class="lbl">Unit (Beruniform)</div><div class="v" id="kpiUniBU">0</div></div><span class="pill">beruniform</span></div>
+<div class="card kpi"><div><div class="lbl">Unit (Sukan)</div><div class="v" id="kpiUniSukan">0</div></div><span class="pill">sukan</span></div>
+<div class="card kpi"><div><div class="lbl">Unit (Kelab)</div><div class="v" id="kpiUniKelab">0</div></div><span class="pill">kelab</span></div>
+</div>
+<div class="grid cols-2" style="margin-top:12px">
+<div class="card"><b>Populariti Keahlian</b><canvas id="kokoChart" class="chart"></canvas></div>
+<div class="card">
+<div class="row" style="justify-content:space-between;align-items:center">
+<b>Senarai Keahlian</b>
+<input id="kokoSearch" class="chip" placeholder="Cari nama/kelas/unit…" oninput="renderKoko()">
+</div>
+<div class="tbl-wrap"><table id="tblKoko"><thead><tr><th>Nama</th><th>Kelas</th><th>Beruniform</th><th>Sukan</th><th>Kelab</th></tr></thead><tbody></tbody></table></div>
+</div>
+</div>
+</section>
+
+<!-- ARKIB -->
+<section class="view" id="view-arkib">
+<div class="grid cols-3">
+<div class="card"><b>Arkib Data Murid (≤5 tahun)</b><div class="tbl-wrap"><table id="tblArkibMurid"><thead><tr><th>Tahun</th><th>Bil. Murid</th><th>Catatan</th></tr></thead><tbody></tbody></table></div></div>
+<div class="card"><b>Arkib Aktiviti Sekolah</b><div class="tbl-wrap"><table id="tblArkibAkt"><thead><tr><th>Tarikh</th><th>Program</th><th>Unit</th></tr></thead><tbody></tbody></table></div></div>
+<div class="card"><b>Arkib Bantuan / Analisis</b><div class="tbl-wrap"><table id="tblArkibBantuan"><thead><tr><th>Tahun</th><th>Jenis</th><th>Bil. Penerima</th></tr></thead><tbody></tbody></table></div></div>
+</div>
+</section>
+
+<!-- PENJAGA -->
+<section class="view" id="view-penjaga">
+<div class="card">
+<div class="row" style="gap:10px;align-items:center;justify-content:space-between">
+<h3>Semakan Penjaga</h3>
+<div class="row">
+<input id="penjagaCari" type="search" placeholder="Cari nama murid…">
+<button id="penjagaCetak" type="button" class="btn">Cetak</button>
+</div>
+</div>
+<div id="penjagaPrint" class="print-target">
+<h4>Ringkasan Murid</h4>
+<div class="tbl-wrap"><table class="kv"><tbody id="penjaga-basic"></tbody></table></div>
+<h4>Prestasi Akademik</h4>
+<div class="tbl-wrap"><table class="kv"><tbody id="penjaga-akad"></tbody></table></div>
+<h4>Kokurikulum</h4>
+<div class="tbl-wrap"><table class="kv"><tbody id="penjaga-koko"></tbody></table></div>
+<h4>SSDM</h4>
+<div class="tbl-wrap"><table class="kv"><tbody id="penjaga-ssdm"></tbody></table></div>
+<h4>Yuran / Pembelian</h4>
+<div class="tbl-wrap"><table class="kv"><tbody id="penjaga-yuran"></tbody></table></div>
+</div>
+</div>
+</section>
+
+<footer>© SKCMgo — SmartDash v4.1.9g • Multi-CSV import • Cache tempatan • Tema/Aksen • Cetak kemas.</footer>
+
+<script>
+// ---------- Tarikh/Masa BM ----------
+function updateDateTime(){
+const now=new Date();
+const hari=["Ahad","Isnin","Selasa","Rabu","Khamis","Jumaat","Sabtu"][now.getDay()];
+const bulan=["Januari","Februari","Mac","April","Mei","Jun","Julai","Ogos","September","Oktober","November","Disember"][now.getMonth()];
+const pad=n=>String(n).padStart(2,'0');
+const jam=pad(now.getHours()), minit=pad(now.getMinutes()), saat=pad(now.getSeconds());
+document.getElementById('dateTimeBox').textContent = `${hari}, ${pad(now.getDate())} ${bulan} ${now.getFullYear()}, ${jam}:${minit}:${saat}`;
+}
+setInterval(updateDateTime,1000); updateDateTime();
+
+// ---------- Tema/Aksen ----------
+const CKEY='skcmgo_cfg_v419', SKEY='skcmgo_db_v419';
+const $=id=>document.getElementById(id);
+$('btnTheme').onclick=()=>{const t=document.body.getAttribute('data-theme')||'light';document.body.setAttribute('data-theme',t==='light'?'dark':'light');persistCfg();if(_lastChart) drawStackBar(_lastChart.canvasId,_lastChart.labels,_lastChart.male,_lastChart.female);};
+$('accentSel').onchange=e=>{document.body.setAttribute('data-accent',e.target.value);persistCfg();if(_lastChart) drawStackBar(_lastChart.canvasId,_lastChart.labels,_lastChart.male,_lastChart.female);};
+(function restoreCfg(){ try{const c=JSON.parse(localStorage.getItem(CKEY)||'{}'); if(c.theme) document.body.setAttribute('data-theme',c.theme); if(c.accent){document.body.setAttribute('data-accent',c.accent); $('accentSel').value=c.accent;} }catch(e){} })();
+function persistCfg(){ localStorage.setItem(CKEY, JSON.stringify({theme:document.body.getAttribute('data-theme'),accent:document.body.getAttribute('data-accent')})); }
+
+// ---------- CSV Parser ----------
+function parseCSV(txt){
+if(!txt) return {header:[],data:[]};
+txt=String(txt).replace(/^\uFEFF/,'').replace(/\r\n/g,'\n');
+const first=(txt.split(/\r?\n/)[0]||'').trim();
+const cnt={comma:(first.match(/,/g)||[]).length, semi:(first.match(/;/g)||[]).length, tab:(first.match(/\t/g)||[]).length};
+let d=','; if(cnt.semi>cnt.comma&&cnt.semi>=cnt.tab) d=';'; else if(cnt.tab>cnt.comma&&cnt.tab>=cnt.semi) d='\t';
+const rows=[]; let cur='',row=[],q=false;
+for(let i=0;i<txt.length;i++){ const c=txt[i],n=txt[i+1];
+if(q){ if(c=='"'&&n=='"'){cur+='"';i++;} else if(c=='"'){q=false;} else cur+=c; }
+else { if(c=='"'){q=true;} else if(c===d){row.push(cur);cur='';} else if(c=='\n'){row.push(cur);rows.push(row);row=[];cur='';} else if(c=='\r'){} else cur+=c; }
+}
+if(cur.length||row.length){row.push(cur);rows.push(row);}
+const clean=rows.filter(r=>r.some(x=>String(x).trim()!=='')).map(r=>r.map(x=>String(x).trim()));
+if(!clean.length) return {header:[],data:[]};
+const header=clean[0]; const data=clean.slice(1).map(r=>Object.fromEntries(header.map((h,i)=>[h,r[i]??''])));
+return {header,data};
+}
+
+// ---------- Alias Medan ----------
+const ALIAS = {
+NAMA:['NAMA','Nama','Nama Murid','nama','Student Name'],
+KELAS:['KELAS','Kelas','class','Tingkatan','Darjah'],
+TAHUN:['TAHUN','Tahun','Year'],
+JANTINA:['JANTINA','Jantina','Gender','L/P','Sex'],
+KEHADIR:['KEHADIR','% Kehadiran','Kehadiran_%','HADIR_%'],
+
+RMT:['RMT','Bantuan RMT','Makanan Tambahan'],
+BANTUAN:['BANTUAN','KWAMP','Biasiswa','Zakat','Bantuan'],
+BERUNIFORM:['BERUNIFORM','Badan Beruniform','Uniform'],
+SUKAN:['SUKAN','Sukan/Permainan','Sports'],
+KELAB:['KELAB','Kelab/Persatuan','Persatuan'],
+NO_KELUARGA:['NO_KELUARGA','No. Keluarga','Keluarga_ID'],
+SSDM:['SSDM','Kes Disiplin','SSDM Kes','Sahsiah','Rekod Sahsiah','SSSM'],
+
+SUBJEK:['SUBJEK','Subject'],
+MARKAH:['MARKAH','Skor','Score','Markah'],
+GRED:['GRED','Grade'],
+BM:['BM','Bahasa Melayu','BM (%)'], BI:['BI','Bahasa Inggeris','BI (%)'],
+MAT:['MAT','Matematik','MAT (%)'], SAINS:['SAINS','Sains','SAINS (%)'],
+SEJ:['SEJ','Sejarah','SEJ (%)'], AGAMA:['AGAMA','Pendidikan Islam','AGAMA (%)'],
+RBT:['RBT','Reka Bentuk & Teknologi'], PJK:['PJK','Pendidikan Jasmani & Kesihatan'],
+PSV:['PSV','Pendidikan Seni Visual'], MUZIK:['MUZIK','Pendidikan Muzik'],
+BC:['BC','Bahasa Cina'], BT:['BT','Bahasa Tamil'],
+
+ROLE:['ROLE','Peranan','Role'],
+NAMA_GURU:['NAMA_GURU','Nama Guru','Guru'],
+JAWATAN:['JAWATAN','Jawatan','Jawatan/Staf'],
+OPSYEN:['OPSYEN','Opsyen','Opsyen/Subjek','Opsyen_Subjek'],
+SUBJEK_STAF:['SUBJEK_STAF','Subjek Diajar','Subjek'],
+TELEFON:['TELEFON','Telefon','No Tel'],
+EMEL:['EMEL','Email','Emel'],
+
+JAD_GURU:['JAD_GURU','Guru Jadual','Nama Guru Jadual'],
+JAD_KELAS:['JAD_KELAS','Kelas Jadual'],
+JAD_MASA:['JAD_MASA','Masa Jadual','Slot Masa','Masa'],
+JAD_SUBJEK:['JAD_SUBJEK','Subjek Jadual'],
+JAD_HARI:['JAD_HARI','Hari Jadual','Hari'],
+
+LOG_TARIKH:['LOG_TARIKH','Tarikh Aktiviti','Tarikh_Log'],
+LOG_PROGRAM:['LOG_PROGRAM','Nama Program','Program'],
+LOG_UNIT:['LOG_UNIT','Unit Terlibat','Unit'],
+LOG_STATUS:['LOG_STATUS','Status Program','Status'],
+
+HAD_TARIKH:['HAD_TARIKH','Tarikh'],
+HAD_NAMA:['HAD_NAMA','Nama Guru'],
+HAD_STATUS:['HAD_STATUS','Status'],
+HAD_MASA_MULA:['HAD_MASA_MULA','Masa Mula'],
+HAD_MASA_TAMAT:['HAD_MASA_TAMAT','Masa Tamat'],
+HAD_CATATAN:['HAD_CATATAN','Catatan'],
+
+YURAN_PIBG:['YURAN_PIBG','Yuran PIBG'], STATUS_PIBG:['STATUS_PIBG','Status PIBG'],
+YURAN_BUKU:['YURAN_BUKU','Yuran Buku'], STATUS_BUKU:['STATUS_BUKU','Status Buku'],
+
+GURU_KELAS:['GURU_KELAS','WALI_KELAS','Wali Kelas']
+};
+const SUBJECT_KEYS = ['BM','BI','MAT','SAINS','SEJ','AGAMA','RBT','PJK','PSV','MUZIK','BC','BT'];
+
+function canonKey(h,map){ if(!h) return null; let k=String(h).replace(/^\uFEFF/,'').trim();
+const direct=map[k.toLowerCase()]; if(direct) return direct;
+const simp=k.replace(/[()]/g,'').replace(/\s+\/\s+/g,'/').trim().toLowerCase();
+return map[simp]||null;
+}
+function canonicalize(records, header){
+const mapKey={}; Object.entries(ALIAS).forEach(([std,arr])=>{arr.forEach(a=>mapKey[a.toLowerCase()]=std); mapKey[std.toLowerCase()]=std;});
+const toPct=v=>{ if(v==null) return ''; const s=String(v).replace('%','').replace(',','.'); const n=parseFloat(s); return Number.isFinite(n)?n:'' };
+const toSex=v=>{ const s=(v||'').toString().toUpperCase().trim(); if(['L','LELAKI','M'].includes(s)) return 'L'; if(['P','PEREMPUAN','F'].includes(s)) return 'P'; return v||''; };
+return records.map(row=>{ const o={}; Object.keys(row).forEach(k=>{
+const std=canonKey(k,mapKey); if(!std) return; let val=row[k];
+if(['KEHADIR',...SUBJECT_KEYS,'MARKAH'].includes(std)) val=toPct(val);
+if(std==='JANTINA') val=toSex(val);
+o[std]=(val==null?'':val);
+}); return o; });
+}
+
+// ---------- State & Import ----------
+let DB=[]; let Filt={tahun:'',kelas:''};
+function toast(msg){ const el=document.createElement('div'); el.textContent=msg; el.style.cssText='position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--card);color:var(--text);border:1px solid var(--line);padding:10px 14px;border-radius:10px;box-shadow:0 8px 20px rgba(0,0,0,.15);z-index:9999'; document.body.appendChild(el); setTimeout(()=>el.remove(),2200); }
+
+$('fileInput').addEventListener('change', async e=>{
+const files=[...e.target.files||[]]; if(!files.length) return;
+let add=0;
+for(const f of files){
+try{ const txt=await f.text(); const {header,data}=parseCSV(txt); const canon=canonicalize(data,header); DB=DB.concat(canon); add+=canon.length; }
+catch(err){ console.warn('Fail gagal:', f.name, err); }
+}
+localStorage.setItem(SKEY, JSON.stringify(DB));
+hydrateFilters(); renderAll();
+toast('Import siap • rekod baharu: '+add);
+e.target.value='';
+});
+$('btnURL').onclick=async()=>{
+const u=$('urlInput').value.trim(); if(!u) return alert('Masukkan URL CSV dahulu.');
+try{ const res=await fetch(u,{cache:'no-store'}); if(!res.ok) throw new Error('HTTP '+res.status); const txt=await res.text();
+const {header,data}=parseCSV(txt); const canon=canonicalize(data,header); DB=DB.concat(canon);
+localStorage.setItem(SKEY, JSON.stringify(DB));
+hydrateFilters(); renderAll(); toast('Import URL berjaya: '+canon.length+' rekod');
+}catch(err){ alert('Gagal muat URL CSV. Guna Google Sheets (Publish to CSV) / GitHub raw.'); }
+};
+$('btnSave').onclick=()=>{ localStorage.setItem(SKEY, JSON.stringify(DB)); toast('Cache disimpan.'); };
+$('btnClear').onclick=()=>{ if(confirm('Buang semua data cache?')){ localStorage.removeItem(SKEY); DB=[]; hydrateFilters(); renderAll(); } };
+(function boot(){ try{ const raw=localStorage.getItem(SKEY); if(raw) DB=JSON.parse(raw||'[]'); }catch(e){} hydrateFilters(); renderAll(); })();
+
+// ---------- Penapis Global ----------
+function uniq(a){return [...new Set(a.filter(Boolean))].sort();}
+function hydrateFilters(){
+const years=uniq(DB.map(r=>r.TAHUN||r.tahun||r.Tahun||''));
+const kelas=uniq(DB.map(r=>r.KELAS||r.kelas||r.Kelas||''));
+$('tahunSel').innerHTML=`<option value="">— Semua Tahun —</option>`+years.map(v=>`<option>${v}</option>`).join('');
+$('kelasSel').innerHTML=`<option value="">— Semua Kelas —</option>`+kelas.map(v=>`<option>${v}</option>`).join('');
+$('tahunSel').onchange=$('kelasSel').onchange=()=>{ Filt.tahun=$('tahunSel').value; Filt.kelas=$('kelasSel').value; renderAll(); };
+}
+function applyFilter(rows){
+return rows.filter(r=>{
+const th=(r.TAHUN||r.tahun||r.Tahun||'').toString();
+const kl=(r.KELAS||r.kelas||r.Kelas||'').toString();
+return (!Filt.tahun||th===Filt.tahun)&&(!Filt.kelas||kl===Filt.kelas);
+});
+}
+
+// ---------- Helpers ----------
+function fillTable(id, rows){ const tb=$(id).querySelector('tbody'); tb.innerHTML=''; rows.forEach(r=>{const tr=document.createElement('tr'); r.forEach(c=>{const td=document.createElement('td'); td.textContent=(c==null?'':c); tr.appendChild(td);}); tb.appendChild(tr);}); }
+function exportTable(id){ const tbl=$(id); const rows=[...tbl.querySelectorAll('tr')].map(tr=>[...tr.children].map(td=>('"'+(td.textContent||'').replace(/"/g,'""')+'"')).join(',')); const blob=new Blob([rows.join('\n')],{type:'text/csv;charset=utf-8;'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=id+'.csv'; a.click(); }
+function printTable(id,title='Cetak'){const w=window.open('','_blank'); const css='body{font:14px/1.5 system-ui;margin:20px} h2{margin:0 0 8px} table{width:100%;border-collapse:collapse} th,td{border:1px solid #ccc;padding:6px 8px} th{background:#f3f4f6}'; w.document.write(`<html><head><title>${title}</title><style>${css}</style></head><body><h2>${title}</h2>${document.getElementById(id).outerHTML}</body></html>`); w.document.close(); w.print();}
+function groupBy(arr,fn){ const m={}; arr.forEach(x=>{const k=fn(x); (m[k]=m[k]||[]).push(x)}); return m; }
+function distinct(a){return [...new Set(a.filter(Boolean))]}
+function avg(a){const n=a.filter(x=>!isNaN(x)&&x!==''); return n.length? n.reduce((p,c)=>p+ +c,0)/n.length:0}
+function grade(m){ const n=parseFloat(m); if(isNaN(n)) return ''; if(n>=85) return 'A'; if(n>=70) return 'B'; if(n>=55) return 'C'; if(n>=40) return 'D'; return 'E'; }
+function pct(v){ if(typeof v==='number') return v; const s=(v||'').toString().replace('%','').trim(); const n=parseFloat(s); return isNaN(n)?0:n; }
+function isStudent(r){
+const role=(r.ROLE||r.JAWATAN||'').toString().toLowerCase();
+if(/(guru|akp|staf|pekerja|kebersihan|pengawal|security|kerani|pentadbiran)/.test(role)) return false;
+if(/(murid|pelajar)/.test(role)) return true;
+// infer: ada KELAS/TAHUN/JANTINA & ada NAMA, tapi tiada jawatan
+const hasStudentSignals = (r.NAMA||'') && (r.KELAS||r.TAHUN||r.JANTINA);
+return hasStudentSignals;
+}
+
+// ---------- Canvas Charts ----------
+function drawBar(canvasId, labels, values){
+const c=$(canvasId); if(!c) return;
+requestAnimationFrame(()=>{
+const ctx=c.getContext('2d'); const W=c.width=c.clientWidth||c.parentElement.clientWidth||320; const H=c.height=c.clientHeight||240;
+ctx.clearRect(0,0,W,H); ctx.fillStyle=getComputedStyle(document.body).getPropertyValue('--card'); ctx.fillRect(0,0,W,H);
+const pad=28, n=values.length||1, gap=8, max=Math.max(10,...values), bw=(W-2*pad-(n-1)*gap)/n;
+ctx.strokeStyle=getComputedStyle(document.body).getPropertyValue('--line'); ctx.beginPath(); ctx.moveTo(pad,pad); ctx.lineTo(pad,H-pad); ctx.lineTo(W-pad,H-pad); ctx.stroke();
+const col=getComputedStyle(document.body).getPropertyValue('--accent'); ctx.fillStyle=col;
+values.forEach((v,i)=>{ const h=(H-2*pad)*(v/Math.max(max,1)); const x=pad+i*(bw+gap), y=H-pad-h; ctx.fillRect(x,y,bw,h); });
+ctx.fillStyle=getComputedStyle(document.body).getPropertyValue('--muted'); ctx.font="11px system-ui"; labels.forEach((t,i)=>{ const x=pad+i*(bw+gap)+bw/2; ctx.textAlign="center"; ctx.fillText((t||'').toString().slice(0,9), x, H-8); });
+});
+}
+
+// stacked L/P for dashboard
+let _lastChart=null;
+function drawStackBar(canvasId, labels, maleVals, femaleVals){
+const c=$(canvasId); if(!c) return;
+requestAnimationFrame(()=>{
+const ctx=c.getContext('2d');
+const W=c.width = Math.max(1, c.clientWidth || c.parentElement.clientWidth || 320);
+const H=c.height= Math.max(1, c.clientHeight|| 240);
+_lastChart={canvasId,labels:[...labels],male:[...maleVals],female:[...femaleVals]};
+ctx.clearRect(0,0,W,H);
+const css=k=>getComputedStyle(document.body).getPropertyValue(k).trim();
+const pad=28, gap=8, n=labels.length||1, bw=(W-2*pad-(n-1)*gap)/n;
+const stacks = maleVals.map((m,i)=>(+m||0)+(+femaleVals[i]||0));
+const max=Math.max(10,...stacks);
+ctx.fillStyle=css('--card'); ctx.fillRect(0,0,W,H);
+ctx.strokeStyle=css('--line'); ctx.beginPath(); ctx.moveTo(pad,pad); ctx.lineTo(pad,H-pad); ctx.lineTo(W-pad,H-pad); ctx.stroke();
+const colM=css('--good')||'#16a34a', colF=css('--warn')||'#f59e0b';
+for(let i=0;i<n;i++){
+const m=+maleVals[i]||0, f=+femaleVals[i]||0, total=m+f;
+const scale=(H-2*pad)/Math.max(max,1), x=pad+i*(bw+gap), yBase=H-pad;
+const hF=f*scale; ctx.fillStyle=colF; ctx.fillRect(x,yBase-hF,bw,hF);
+const hM=m*scale; ctx.fillStyle=colM; ctx.fillRect(x,yBase-hF-hM,bw,hM);
+ctx.fillStyle=css('--muted'); ctx.font="11px system-ui"; ctx.textAlign="center"; ctx.fillText(String(total), x+bw/2, yBase-(hF+hM)-4);
+}
+ctx.fillStyle=getComputedStyle(document.body).getPropertyValue('--muted'); ctx.font="11px system-ui"; ctx.textAlign="center";
+labels.forEach((t,i)=>ctx.fillText(String(t).slice(0,9), pad+i*(bw+gap)+bw/2, H-8));
+ctx.textAlign="left"; ctx.fillText("■ Perempuan", pad, pad-8); ctx.fillStyle=colM; ctx.fillText("■ Lelaki", pad+110, pad-8);
+});
+}
+window.addEventListener('resize', ()=>{ if(_lastChart) drawStackBar(_lastChart.canvasId,_lastChart.labels,_lastChart.male,_lastChart.female); });
+
+// ---------- Tab Nav ----------
+document.getElementById('tabs').addEventListener('click',(e)=>{
+const b=e.target.closest('.tab-btn'); if(!b) return;
+[...document.querySelectorAll('.tab-btn')].forEach(x=>x.classList.remove('active'));
+b.classList.add('active');
+const name=b.dataset.tab;
+[...document.querySelectorAll('.view')].forEach(v=>v.classList.remove('active'));
+document.getElementById('view-'+name).classList.add('active');
+// redraw chart when dashboard visible
+if(name==='dash' && _lastChart) drawStackBar(_lastChart.canvasId,_lastChart.labels,_lastChart.male,_lastChart.female);
+});
+
+// ---------- Render: Dashboard ----------
+function renderDash(){
+const rows=applyFilter(DB).filter(isStudent), sex=x=>(x||'').toString().toUpperCase().trim();
+const L=rows.filter(r=>sex(r.JANTINA)==='L').length;
+const P=rows.filter(r=>sex(r.JANTINA)==='P').length;
+const had=avg(rows.map(r=>pct(r.KEHADIR)));
+$('kpiTotal').textContent=rows.length; $('kpiL').textContent=L; $('kpiP').textContent=P; $('kpiHadir').textContent=(had||0).toFixed(0)+'%';
+
+const grp=groupBy(rows, r=>r.KELAS||'-');
+const list=Object.entries(grp).map(([k,a])=>{
+const l=a.filter(r=>sex(r.JANTINA)==='L').length, p=a.filter(r=>sex(r.JANTINA)==='P').length;
+const gk=(()=>{const c={};a.map(r=>r.GURU_KELAS||'').filter(Boolean).forEach(x=>c[x]=(c[x]||0)+1);return Object.entries(c).sort((x,y)=>y[1]-x[1])[0]?.[0]||'-'})()
+return {kelas:k,L:l,P:p,J:l+p,GK:gk};
+}).filter(r=>r.kelas && r.kelas!=='-').sort((a,b)=>a.kelas.localeCompare(b.kelas));
+fillTable('tblKelas', list.map((r,i)=>[i+1,r.kelas,r.L,r.P,r.J,r.GK]));
+drawStackBar('clsChart', list.map(x=>x.kelas), list.map(x=>x.L), list.map(x=>x.P));
+}
+
+// ---------- Render: Pentadbiran ----------
+function renderAdmin(){
+const rows=DB; // staf guna semua
+const staf = rows.filter(r=> ((r.ROLE||'')+' '+(r.JAWATAN||'')+(r.NAMA_GURU||'')).toLowerCase().includes('guru'));
+const akp = rows.filter(r=> ((r.ROLE||'')+' '+(r.JAWATAN||'')).toLowerCase().includes('akp') || ((r.JAWATAN||'').toLowerCase().includes('pembantu')));
+const keb = rows.filter(r=> ((r.ROLE||'')+' '+(r.JAWATAN||'')).toLowerCase().includes('kebersihan') );
+const guard= rows.filter(r=> ((r.ROLE||'')+'').toLowerCase().includes('pengawal') || ((r.ROLE||'')+'').toLowerCase().includes('security'));
+$('kpiGuru').textContent=staf.length; $('kpiAKP').textContent=akp.length; $('kpiKeb').textContent=keb.length; $('kpiGuard').textContent=guard.length;
+
+fillTable('tblStaf', staf.map(r=>[
+r.NAMA||r.NAMA_GURU||'-', r.JAWATAN||'-', r.OPSYEN||r.SUBJEK_STAF||'-', r.TELEFON||'-', r.EMEL||'-'
+]));
+
+const hadir = rows.filter(r=> r.HAD_TARIKH||r.HAD_NAMA||r.HAD_STATUS);
+fillTable('tblHadirGuru', hadir.map(r=>[
+r.HAD_TARIKH||'-', r.HAD_NAMA||'-', r.HAD_STATUS||'-', ((r.HAD_MASA_MULA||'')+' - '+(r.HAD_MASA_TAMAT||''))||'-', r.HAD_CATATAN||'-'
+]));
+
+const jad = rows.filter(r=> r.JAD_GURU||r.JAD_KELAS||r.JAD_MASA||r.JAD_SUBJEK||r.JAD_HARI );
+let jadView = [...jad];
+const applyJadFilter = () => {
+const g = ($('jadCariGuru').value||'').toLowerCase();
+const k = ($('jadCariKelas').value||'').toLowerCase();
+const m = ($('jadCariMasa').value||'').toLowerCase();
+const s = ($('jadCariSubjek').value||'').toLowerCase();
+const h = ($('jadCariHari').value||'').toLowerCase();
+const day = ($('jadHari').value||'').toLowerCase();
+jadView = jad.filter(r=>{
+if(day && ((r.JAD_HARI||'').toLowerCase() !== day)) return false;
+const a = (r.JAD_GURU||'').toLowerCase().includes(g);
+const b = (r.JAD_KELAS||'').toLowerCase().includes(k);
+const c = (r.JAD_MASA||'').toLowerCase().includes(m);
+const d = (r.JAD_SUBJEK||'').toLowerCase().includes(s);
+const e = (r.JAD_HARI||'').toLowerCase().includes(h);
+return a && b && c && d && e;
+});
+fillTable('tblJadual', jadView.map(r=>[r.JAD_GURU||'-', r.JAD_KELAS||'-', r.JAD_MASA||'-', r.JAD_SUBJEK||'-', r.JAD_HARI||'-']));
+};
+['jadCariGuru','jadCariKelas','jadCariMasa','jadCariSubjek','jadCariHari'].forEach(id=>($(id)||{}).oninput=applyJadFilter);
+if($('jadHari')) $('jadHari').onchange = applyJadFilter;
+if($('jadClear')) $('jadClear').onclick = ()=>{ ['jadCariGuru','jadCariKelas','jadCariMasa','jadCariSubjek','jadCariHari'].forEach(id=>{ if($(id)) $(id).value=''; }); if($('jadHari')) $('jadHari').value=''; applyJadFilter(); };
+applyJadFilter();
+
+const logs = rows.filter(r=>r.LOG_TARIKH||r.LOG_PROGRAM||r.LOG_UNIT||r.LOG_STATUS);
+fillTable('tblLog', logs.map(r=>[r.LOG_TARIKH||'-', r.LOG_PROGRAM||'-', r.LOG_UNIT||'-', r.LOG_STATUS||'-']));
+const pekerja = rows.filter(r=> (r.ROLE||'').toLowerCase().includes('kebersihan') || (r.ROLE||'').toLowerCase().includes('pengawal') || r.PERANAN );
+fillTable('tblPekerja', pekerja.map(r=>[r.NAMA||'-', r.ROLE||r.PERANAN||'-', r.SYIF||'-', r.CATATAN||'-']));
+const hub = rows.filter(r=> (r.AGENSI||'').length || (r.PENGHUBUNG||'').length );
+fillTable('tblHubung', hub.map(r=>[r.AGENSI||'-', r.PENGHUBUNG||r.NAMA||'-', r.TELEFON||'-', r.CATATAN||'-']));
+}
+
+// ---------- Render: Akademik ----------
+function renderAkad(){
+const rows = applyFilter(DB).filter(isStudent);
+
+// subjek tersedia
+const availSubs = distinct(rows.flatMap(r=> SUBJECT_KEYS.filter(k => r[k] != null && String(r[k]).trim() !== '')));
+$('subSel').innerHTML = `<option value="">— Semua Subjek —</option>` + availSubs.map(s=>`<option>${s}</option>`).join('');
+
+// long form rekod
+const akad = [];
+rows.forEach(r=>{
+const found = SUBJECT_KEYS.filter(k => r[k] != null && String(r[k]).trim()!=='');
+if(found.length){
+found.forEach(k=> akad.push({nama:r.NAMA||'-', kelas:r.KELAS||'-', subjek:k, markah:r[k], gred:grade(r[k])}));
+}
+if(r.SUBJEK || r.MARKAH){
+akad.push({nama:r.NAMA||'-', kelas:r.KELAS||'-', subjek:r.SUBJEK||'-', markah:r.MARKAH||'', gred:r.GRED||grade(r.MARKAH)});
+}
+});
+
+function applyAkad(){
+const s=$('subSel').value;
+const q=($('akdCari').value||'').toLowerCase();
+let view=[...akad];
+if(s) view=view.filter(x=>x.subjek===s);
+if(q) view=view.filter(x=>x.nama.toLowerCase().includes(q));
+
+fillTable('tblAkad', view.map(r=>[r.nama,r.kelas,r.subjek,r.markah,r.gred]));
+
+// peratus lulus per subjek
+const bySub=groupBy(view, r=>r.subjek||'-');
+const subs=Object.keys(bySub);
+const passPct = subs.map(k=>{
+const a=bySub[k];
+const pass = a.filter(x=>(+x.markah)>=40).length;
+return Math.round((pass/(a.length||1))*100);
+});
+drawBar('akadChart', subs, passPct);
+const overallPct = passPct.length? Math.round(passPct.reduce((p,c)=>p+c,0)/(passPct.length||1)) : 0;
+$('kpiLulus').textContent = overallPct+'%';
+let bestIndex = -1; let bestVal = -1;
+for(let i=0;i<subs.length;i++){ if((passPct[i]||0) > bestVal){ bestVal = passPct[i]; bestIndex = i; } }
+$('kpiTopSub').textContent = (bestIndex>=0? subs[bestIndex] : '-');
+
+// >>> Murid Cemerlang = murid unik yang ada ≥1 A (ikut penapis semasa)
+const cemerlangSet = new Set(
+view.filter(r => (r.gred||'').toUpperCase()==='A')
+.map(r => (r.nama||'-')+'||'+(r.kelas||'-'))
+);
+$('kpiCemerlang').textContent = cemerlangSet.size;
+}
+
+$('subSel').onchange=$('akdCari').oninput=applyAkad;
+$('akdBtnCari').onclick=applyAkad;
+$('akdBtnTop').onclick=()=>{
+const s=$('subSel').value;
+let view=[...akad]; if(s) view=view.filter(x=>x.subjek===s);
+view.sort((a,b)=>(+b.markah||0)-(+a.markah||0));
+fillTable('tblAkad', view.slice(0,10).map(r=>[r.nama,r.kelas,r.subjek,r.markah,r.gred]));
+};
+$('akdCetak').onclick=()=>{
+const name = ($('akdCari').value||'').trim();
+if(!name){ alert('Taip nama murid dahulu, kemudian tekan Cetak.'); return; }
+const recs = akad.filter(r=> r.nama.toLowerCase().includes(name.toLowerCase()));
+if(!recs.length){ alert('Nama tidak ditemui.'); return; }
+const byN = groupBy(recs, r=>r.nama+'||'+r.kelas);
+const blocks = Object.entries(byN).map(([key,a])=>{
+const [n,k]=key.split('||'); const rows = distinct(a.map(x=>x.subjek)).map(s=>{
+const r = a.find(x=>x.subjek===s)||{}; return `<tr><td>${s}</td><td>${r.markah??'-'}</td><td>${r.gred??grade(r.markah)}</td></tr>`;
+}).join('');
+return `<div class="card"><b>${n}</b> — ${k}<div class="tbl-wrap"><table><thead><tr><th>Subjek</th><th>Markah</th><th>Gred</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
+}).join('');
+$('akdSlip').innerHTML = blocks || '<div class="sub">Tiada rekod.</div>';
+window.print();
+};
+applyAkad();
+}
+
+// ---------- Render: HEM ----------
+function renderHEM(){
+const rowsStu = applyFilter(DB).filter(isStudent);
+const low = v => (v||'').toString().toLowerCase().trim();
+const has = v => (v||'').toString().trim() !== '';
+const yes = v => /(ya|y|true|1|layak|penerima|aktif|active|eligible)/.test(low(v));
+const no = v => /(tidak\s*layak|tidak|tak|no|false|0|tiada|none|-)/.test(low(v));
+
+const rmt = rowsStu.filter(r => yes(r.RMT) || /(^|\b)rmt(\b|:)/.test(low(r.BANTUAN||'')));
+const bantuan = rowsStu.filter(r => {
+const b = low(r.BANTUAN||'');
+return /(kwamp|biasiswa|zakat|bkpu|bap|bantuan)/.test(b) || (has(b) && !no(b));
+});
+
+const POS = /(cemerlang|terpuji|baik|sederhana|pujian|amalan|sahsiah|akhlak|mithali|contoh)/i;
+const ssdmList = rowsStu.filter(r => {
+const s = (r.SSDM||'').toString().trim();
+if(!s || /^(0|tiada|-)\s*$/i.test(s)) return false;
+return POS.test(s);
+});
+
+const keluarga = [...new Set(rowsStu.map(r=>r.NO_KELUARGA).filter(Boolean))].length;
+
+$('kpiRMT').textContent = rmt.length;
+$('kpiBantuan').textContent = bantuan.length;
+$('kpiKeluarga').textContent = keluarga || 0;
+$('kpiSSDM').textContent = ssdmList.length;
+
+fillTable('tblRMT', rmt.map(r=>[
+r.NAMA||'-', r.KELAS||'-', r.RMT ? 'RMT' : (r.BANTUAN||'-'), 'Aktif'
+]));
+
+const hadirRows = [...rowsStu]
+.map(r => [r.NAMA||'-', r.KELAS||'-', (pct(r.KEHADIR)||0)])
+.sort((a,b)=>b[2]-a[2]);
+fillTable('tblHadir', hadirRows.map(r=>[r[0], r[1], r[2]+'%']));
+
+fillTable('tblSSDM', ssdmList.map(r=>[
+r.NAMA||'-', r.KELAS||'-', r.SSDM||'—', r.CATATAN||'-'
+]));
+}
+
+// ---------- Render: Koko ----------
+function renderKoko(){
+const q = ($('kokoSearch')?.value || '').toLowerCase();
+const rows = applyFilter(DB).filter(isStudent).filter(r=>{
+if(!q) return true;
+const hay = [r.NAMA||'', r.KELAS||'', r.BERUNIFORM||'', r.SUKAN||'', r.KELAB||''].join(' ').toLowerCase();
+return hay.includes(q);
+});
+const bu=distinct(rows.map(r=>r.BERUNIFORM||'').filter(Boolean)).length;
+const sk=distinct(rows.map(r=>r.SUKAN||'').filter(Boolean)).length;
+const kb=distinct(rows.map(r=>r.KELAB||'').filter(Boolean)).length;
+$('kpiUniBU').textContent=bu; $('kpiUniSukan').textContent=sk; $('kpiUniKelab').textContent=kb;
+
+const cnt={}; rows.forEach(r=>['BERUNIFORM','SUKAN','KELAB'].forEach(k=>{const v=r[k]; if(v){cnt[v]=(cnt[v]||0)+1;}}));
+const labels=Object.keys(cnt), vals=labels.map(k=>cnt[k]); drawBar('kokoChart', labels, vals);
+fillTable('tblKoko', rows.map(r=>[r.NAMA||'-', r.KELAS||'-', r.BERUNIFORM||'-', r.SUKAN||'-', r.KELAB||'-']));
+}
+
+// ---------- Render: Arkib ----------
+function renderArkib(){
+const rows=applyFilter(DB).filter(isStudent); const byYr=groupBy(rows, r=>r.TAHUN||'-');
+fillTable('tblArkibMurid', Object.entries(byYr).map(([y,a])=>[y,a.length,'—']));
+fillTable('tblArkibAkt', []); fillTable('tblArkibBantuan', []);
+}
+
+// ---------- Render: Penjaga ----------
+function renderPenjaga(){
+const q=($('penjagaCari').value||'').toLowerCase();
+const rows=applyFilter(DB).filter(isStudent).filter(r=>(r.NAMA||'').toLowerCase().includes(q));
+const r=rows[0]||{};
+fillKV('penjaga-basic', [
+['Nama',r.NAMA||'-'],['Kelas',r.KELAS||'-'],['Tahun',r.TAHUN||'-'],
+['% Kehadiran',(pct(r.KEHADIR)||0)+'%'],['Bantuan',r.RMT?'RMT':(r.BANTUAN||'-')]
+]);
+const foundSubs = SUBJECT_KEYS.filter(k => r[k] != null && String(r[k]).trim() !== '');
+let rowsAkad = [];
+if (foundSubs.length) rowsAkad = foundSubs.map(k => [k, r[k] || '-', grade(r[k])]);
+else if (r.SUBJEK || r.MARKAH) rowsAkad = [[r.SUBJEK || '-', r.MARKAH || '-', grade(r.MARKAH)]];
+fillKV('penjaga-akad', rowsAkad.map(x=>[''+x[0], (x[1]??'-')+' ('+(x[2]??grade(x[1]))+')']));
+fillKV('penjaga-koko', [['Beruniform',r.BERUNIFORM||'-'],['Sukan',r.SUKAN||'-'],['Kelab',r.KELAB||'-']]);
+fillKV('penjaga-ssdm', [['Klasifikasi', r.SSDM||'—'],['Catatan',r.CATATAN||'-']]);
+fillKV('penjaga-yuran', [['Yuran PIBG', r.YURAN_PIBG||'-'],['Status PIBG', r.STATUS_PIBG||'-'],['Yuran Buku', r.YURAN_BUKU||'-'],['Status Buku', r.STATUS_BUKU||'-']]);
+}
+function fillKV(tbodyId, rows){ const tb=$(tbodyId); if(!tb) return; tb.innerHTML=''; rows.forEach(r=>{const tr=document.createElement('tr'); tr.innerHTML=`<td>${r[0]}</td><td>${r[1]}</td>`; tb.appendChild(tr); }); }
+$('penjagaCari').oninput=renderPenjaga;
+$('penjagaCetak').onclick=()=>{ const w=window.open('','_blank'); const css='body{font:14px/1.5 system-ui;margin:20px} h2{margin:0 0 8px} table{width:100%;border-collapse:collapse;margin:8px 0 12px} th,td{border:1px solid #ccc;padding:6px 8px} th{background:#f3f4f6}'; const wrap=$('penjagaPrint').outerHTML; w.document.write(`<html><head><title>Cetak — Penjaga</title><style>${css}</style></head><body><h2>Semakan Penjaga</h2>${wrap}</body></html>`); w.document.close(); w.print(); };
+
+// ---------- Master Render ----------
+function renderAll(){ renderDash(); renderAdmin(); renderAkad(); renderHEM(); renderKoko(); renderArkib(); renderPenjaga(); }
+</script>
+</body>
+</html>
